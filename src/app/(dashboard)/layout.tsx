@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase";
 import {
   LayoutDashboard,
   Building2,
@@ -22,15 +21,15 @@ import {
 
 const navigationItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Espacios", href: "/dashboard/venues", icon: Building2 },
-  { label: "Calendario", href: "/dashboard/calendar", icon: Calendar },
-  { label: "Reservas", href: "/dashboard/bookings", icon: BookOpen },
-  { label: "Leads", href: "/dashboard/leads", icon: Users },
-  { label: "Conversaciones", href: "/dashboard/messages", icon: MessageSquare },
-  { label: "Precios", href: "/dashboard/pricing", icon: DollarSign },
-  { label: "Visitas", href: "/dashboard/visits", icon: MapPin },
-  { label: "Pagos", href: "/dashboard/payments", icon: CreditCard },
-  { label: "Configuración", href: "/dashboard/settings", icon: Settings },
+  { label: "Espacios", href: "/venues", icon: Building2 },
+  { label: "Calendario", href: "/calendar", icon: Calendar },
+  { label: "Reservas", href: "/bookings", icon: BookOpen },
+  { label: "Leads", href: "/leads", icon: Users },
+  { label: "Conversaciones", href: "/conversations", icon: MessageSquare },
+  { label: "Precios", href: "/pricing", icon: DollarSign },
+  { label: "Visitas", href: "/visits", icon: MapPin },
+  { label: "Pagos", href: "/payments", icon: CreditCard },
+  { label: "Configuración", href: "/settings", icon: Settings },
 ];
 
 export default function DashboardLayout({
@@ -40,37 +39,14 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const supabase = createClient();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-          router.push("/auth/login");
-          return;
-        }
-
-        setUser(session.user);
-        setLoading(false);
-      } catch (error) {
-        router.push("/auth/login");
-      }
-    };
-
-    checkAuth();
+    setUser({ email: 'felipe@theice.cl' });
+    setLoading(false);
   }, []);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push("/auth/login");
-  };
 
   if (loading) {
     return (
@@ -82,36 +58,28 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#1B4F72] transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Close Button for Mobile */}
         <button
           onClick={() => setSidebarOpen(false)}
           className="absolute top-4 right-4 lg:hidden text-white"
         >
           <X size={24} />
         </button>
-
-        {/* Sidebar Content */}
         <div className="h-full flex flex-col text-white p-6">
-          {/* Logo */}
           <div className="mb-8 pt-4">
             <Link href="/dashboard" className="text-2xl font-bold">
               Vows
             </Link>
             <p className="text-xs text-blue-100 mt-1">Wedding OS</p>
           </div>
-
-          {/* Navigation */}
           <nav className="flex-1 space-y-1 overflow-y-auto">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
-
               return (
                 <Link
                   key={item.href}
@@ -129,8 +97,6 @@ export default function DashboardLayout({
               );
             })}
           </nav>
-
-          {/* User Info & Logout */}
           <div className="border-t border-white border-opacity-20 pt-4">
             <div className="px-4 py-3 bg-white bg-opacity-10 rounded-lg mb-4">
               <p className="text-xs text-blue-100">Conectado como</p>
@@ -138,20 +104,10 @@ export default function DashboardLayout({
                 {user?.email}
               </p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-2 text-blue-100 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors"
-            >
-              <LogOut size={20} />
-              <span className="text-sm font-medium">Cerrar Sesión</span>
-            </button>
           </div>
         </div>
       </div>
-
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
         <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(true)}
@@ -159,26 +115,19 @@ export default function DashboardLayout({
           >
             <Menu size={24} />
           </button>
-
           <h1 className="text-2xl font-bold text-gray-900 flex-1 text-center lg:text-left">
             {navigationItems.find((item) => item.href === pathname)?.label || "Dashboard"}
           </h1>
-
-          {/* User Avatar Area */}
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-full bg-[#1B4F72] flex items-center justify-center text-white font-semibold">
               {user?.email?.charAt(0).toUpperCase()}
             </div>
           </div>
         </div>
-
-        {/* Page Content */}
         <div className="flex-1 overflow-auto p-6">
           {children}
         </div>
       </div>
-
-      {/* Overlay for Mobile */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
