@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Lead } from '@/types/database';
+
 import { formatCLP } from '@/lib/utils';
 import { LeadCard } from '@/components/leads/lead-card';
 import { LeadFormModal } from '@/components/leads/lead-form-modal';

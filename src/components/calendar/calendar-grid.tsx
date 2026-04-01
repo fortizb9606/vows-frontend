@@ -1,4 +1,4 @@
-import { DateSlot } from '@/types/database';
+import type { DateSlot } from '@/types/database';
 import { formatCLP } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 

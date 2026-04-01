@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, Users, DollarSign, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { BookingWithVenue, Payment } from '@/types/database';
+import type { BookingWithVenue, Payment } from '@/types/database';
 import { cn, formatCLP, formatDate } from '@/lib/utils';
 import StatCard from '@/components/dashboard/stat-card';
 import RevenueChart from '@/components/dashboard/revenue-chart';

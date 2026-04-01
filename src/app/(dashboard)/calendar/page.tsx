@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { DateSlot, Venue } from '@/types/database';
+import type { DateSlot, Venue } from '@/types/database';
 import { cn } from '@/lib/utils';
 import CalendarGrid from '@/components/calendar/calendar-grid';
 import DayDetailModal from '@/components/calendar/day-detail-modal';

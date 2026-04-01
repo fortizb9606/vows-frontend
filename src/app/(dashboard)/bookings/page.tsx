@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Booking } from '@/types/database';
+
 import { formatCLP } from '@/lib/utils';
 import { BookingCard } from '@/components/bookings/booking-card';
 import { Search, Plus } from 'lucide-react';

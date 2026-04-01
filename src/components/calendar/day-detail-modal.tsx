@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { DateSlot } from '@/types/database';
+import type { DateSlot } from '@/types/database';
 import { formatDate, formatCLP, getStatusLabel } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
