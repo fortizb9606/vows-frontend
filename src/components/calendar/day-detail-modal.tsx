@@ -5,11 +5,6 @@ import { X, Eye } from 'lucide-react';
 import type { DateSlotStatus, DateSlot } from '@/types/database';
 import { cn } from '@/lib/utils';
 
-interface SlotData {
-  status: DateSlotStatus;
-  notes: string; // JSON string: { price, pricePerGuest, coupleName, guestCount }
-}
-
 interface DayDetailPanelProps {
   dateStr: string;
   existingSlot: DateSlot | null;
