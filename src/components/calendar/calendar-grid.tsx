@@ -9,14 +9,42 @@ interface CalendarGridProps {
   onDayClick: (dateStr: string, existingSlot: DateSlot | null) => void;
 }
 
-// Status → visual style
-const statusStyles: Record<string, { bg: string; border: string; text: string }> = {
-  AVAILABLE: { bg: 'bg-green-50', border: 'border-green-400', text: 'text-green-700' },
-  SOFT_BLOCK: { bg: 'bg-orange-50', border: 'border-orange-400', text: 'text-orange-700' },
-  RESERVED: { bg: 'bg-pink-50', border: 'border-pink-400', text: 'text-pink-700' },
-  TECHNICAL_BLOCK: { bg: 'bg-gray-100', border: 'border-gray-400', text: 'text-gray-600' },
-  MAINTENANCE: { bg: 'bg-orange-50', border: 'border-orange-400', text: 'text-orange-700' },
+const statusStyles: Record<string, { bg: string; border: string; text: string; priceText: string }> = {
+  AVAILABLE: { bg: 'bg-green-50', border: 'border-green-400', text: 'text-green-700', priceText: 'text-green-600' },
+  SOFT_BLOCK: { bg: 'bg-orange-50', border: 'border-orange-400', text: 'text-orange-700', priceText: 'text-orange-600' },
+  RESERVED: { bg: 'bg-pink-50', border: 'border-pink-400', text: 'text-pink-700', priceText: 'text-pink-600' },
+  TECHNICAL_BLOCK: { bg: 'bg-gray-100', border: 'border-gray-400', text: 'text-gray-600', priceText: 'text-gray-500' },
+  MAINTENANCE: { bg: 'bg-orange-50', border: 'border-orange-400', text: 'text-orange-700', priceText: 'text-orange-600' },
 };
+
+// Parse JSON notes to extract price and couple info
+function parseNotes(notes: string | undefined): {
+  price: number;
+  coupleName: string;
+  guestCount: string;
+} {
+  if (!notes) return { price: 0, coupleName: '', guestCount: '' };
+  try {
+    const p = JSON.parse(notes);
+    return {
+      price: p.price || 0,
+      coupleName: p.coupleName || '',
+      guestCount: p.guestCount || '',
+    };
+  } catch {
+    return { price: 0, coupleName: '', guestCount: '' };
+  }
+}
+
+function formatShortPrice(value: number): string {
+  if (value >= 1000000) {
+    const m = value / 1000000;
+    return `$${m % 1 === 0 ? m.toFixed(0) : m.toFixed(1)}M`;
+  }
+  if (value >= 1000) return `$${Math.round(value / 1000)}K`;
+  if (value > 0) return `$${value}`;
+  return '';
+}
 
 export default function CalendarGrid({ slots, month, year, selectedDateStr, onDayClick }: CalendarGridProps) {
   const firstDay = new Date(year, month, 1).getDay();
@@ -24,11 +52,9 @@ export default function CalendarGrid({ slots, month, year, selectedDateStr, onDa
   const today = new Date();
   const isCurrentMonth = today.getFullYear() === year && today.getMonth() === month;
 
-  // Map slots by date
   const slotMap: Record<string, DateSlot> = {};
   slots.forEach((s) => { slotMap[s.date.split('T')[0]] = s; });
 
-  // Monday-first grid
   const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
   const cells: (number | null)[] = [];
   for (let i = 0; i < adjustedFirstDay; i++) cells.push(null);
@@ -60,31 +86,23 @@ export default function CalendarGrid({ slots, month, year, selectedDateStr, onDa
           const isToday = isCurrentMonth && day === today.getDate();
           const isSelected = dateStr === selectedDateStr;
           const style = slot ? statusStyles[slot.status] : null;
-          const isWeekend = (adjustedFirstDay + day - 1) % 7 >= 5;
 
-          // Parse notes for couple name / guest count (format: "Couple Name|120inv")
-          let coupleName = '';
-          let guestInfo = '';
-          if (slot && slot.status === 'RESERVED' && slot.notes) {
-            const parts = slot.notes.split('|');
-            coupleName = parts[0] || '';
-            guestInfo = parts[1] || '';
-          }
+          const parsed = slot ? parseNotes(slot.notes) : null;
+          const priceLabel = parsed?.price ? formatShortPrice(parsed.price) : '';
+          const isReserved = slot?.status === 'RESERVED';
+          const isBlocked = slot?.status === 'SOFT_BLOCK' || slot?.status === 'TECHNICAL_BLOCK' || slot?.status === 'MAINTENANCE';
 
           return (
             <button
               key={`d-${day}`}
               onClick={() => onDayClick(dateStr, slot)}
               className={cn(
-                'aspect-[4/3] rounded-lg border-2 p-1.5 transition-all flex flex-col items-center justify-start gap-0.5 relative overflow-hidden',
+                'aspect-[4/3] rounded-lg border-2 px-1 py-1.5 transition-all flex flex-col items-center justify-start gap-0 relative overflow-hidden',
                 isSelected && 'ring-2 ring-blue-500 ring-offset-1',
                 isToday && !isSelected && 'ring-2 ring-blue-300 ring-offset-1',
                 slot
                   ? cn(style?.bg, style?.border, 'hover:shadow-md cursor-pointer')
-                  : cn(
-                    'border-gray-200 hover:border-gray-400 cursor-pointer',
-                    isWeekend ? 'bg-gray-50' : 'bg-white'
-                  )
+                  : 'bg-white border-gray-200 hover:border-gray-400 cursor-pointer'
               )}
             >
               {/* Day number */}
@@ -95,25 +113,32 @@ export default function CalendarGrid({ slots, month, year, selectedDateStr, onDa
                 {day}
               </span>
 
-              {/* Slot content */}
-              {slot && slot.status === 'RESERVED' && coupleName && (
-                <span className="text-[9px] font-semibold text-pink-700 leading-tight truncate w-full text-center">
-                  {coupleName}
+              {/* Reserved: couple name + guests */}
+              {isReserved && parsed?.coupleName && (
+                <span className="text-[8px] font-semibold text-pink-700 leading-tight truncate w-full text-center mt-0.5">
+                  {parsed.coupleName}
                 </span>
               )}
-              {slot && slot.status === 'RESERVED' && guestInfo && (
-                <span className="text-[8px] text-pink-500 leading-tight">
-                  {guestInfo}
+              {isReserved && parsed?.guestCount && (
+                <span className="text-[7px] text-pink-500 leading-tight">
+                  {parsed.guestCount}inv
                 </span>
               )}
-              {slot && (slot.status === 'MAINTENANCE' || slot.status === 'TECHNICAL_BLOCK') && (
+
+              {/* Blocked icon */}
+              {isBlocked && (
                 <svg className="w-3.5 h-3.5 text-orange-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
                 </svg>
               )}
-              {slot && slot.status === 'AVAILABLE' && (
-                <span className="text-[9px] font-semibold text-green-600 leading-tight mt-auto">
-                  Libre
+
+              {/* Price — shown at bottom */}
+              {priceLabel && !isBlocked && (
+                <span className={cn(
+                  'text-[10px] font-bold leading-none mt-auto',
+                  slot ? style?.priceText : 'text-gray-500'
+                )}>
+                  {priceLabel}
                 </span>
               )}
             </button>
