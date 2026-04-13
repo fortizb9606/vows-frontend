@@ -109,22 +109,22 @@ export default function CalendarPage() {
   const year = currentDate.getFullYear();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Calendario de Disponibilidad</h1>
+      <div className="border-b border-gray-100 pb-6">
+        <h1 className="text-4xl font-bold text-gray-900">Calendario de Disponibilidad</h1>
         <p className="text-gray-600 mt-2">Gestiona la disponibilidad y precios de tu venue</p>
       </div>
 
       {/* Venue Selector */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <label className="block text-sm font-semibold text-gray-900 mb-3">
           Selecciona Venue
         </label>
         <select
           value={selectedVenue}
           onChange={(e) => setSelectedVenue(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all"
         >
           {venues.map((venue) => (
             <option key={venue.id} value={venue.id}>
@@ -134,41 +134,43 @@ export default function CalendarPage() {
         </select>
       </div>
 
-      {/* Legend */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex flex-wrap gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-green-500" />
+      {/* Color Legend */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 mb-4">Leyenda de Estados</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
             <span className="text-sm text-gray-700">Disponible</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-yellow-500" />
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-yellow-500 flex-shrink-0" />
             <span className="text-sm text-gray-700">Bloqueo Suave</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-red-500" />
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
             <span className="text-sm text-gray-700">Reservado</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-gray-400" />
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-gray-400 flex-shrink-0" />
             <span className="text-sm text-gray-700">Bloqueo Técnico</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-orange-500" />
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-orange-500 flex-shrink-0" />
             <span className="text-sm text-gray-700">Mantenimiento</span>
           </div>
         </div>
       </div>
 
-      {/* Calendar */}
-      <div className="bg-white rounded-lg shadow p-6">
+      {/* Calendar Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         {/* Month Navigation */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
           <button
             onClick={handlePrevMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-700 hover:text-gray-900"
+            aria-label="Previous month"
           >
-            <ChevronLeft className="w-5 h-5 text-gray-700" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
 
           <h2 className="text-2xl font-bold text-gray-900">
@@ -177,23 +179,43 @@ export default function CalendarPage() {
 
           <button
             onClick={handleNextMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-700 hover:text-gray-900"
+            aria-label="Next month"
           >
-            <ChevronRight className="w-5 h-5 text-gray-700" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
         {/* Calendar Grid */}
-        {loading ? (
-          <div className="h-96 bg-gray-100 rounded-lg animate-pulse" />
-        ) : (
-          <CalendarGrid
-            slots={slots}
-            month={currentDate.getMonth()}
-            year={currentDate.getFullYear()}
-            onDayClick={handleDayClick}
-          />
-        )}
+        <div className="p-6">
+          {loading ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-7 gap-3">
+                {Array.from({ length: 7 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-8 bg-gray-100 rounded-lg animate-pulse"
+                  />
+                ))}
+              </div>
+              <div className="grid grid-cols-7 gap-3">
+                {Array.from({ length: 35 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="aspect-square bg-gray-100 rounded-lg animate-pulse"
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <CalendarGrid
+              slots={slots}
+              month={currentDate.getMonth()}
+              year={currentDate.getFullYear()}
+              onDayClick={handleDayClick}
+            />
+          )}
+        </div>
       </div>
 
       {/* Day Detail Modal */}

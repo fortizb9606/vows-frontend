@@ -2,39 +2,62 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { formatCLP, formatDate, getStatusColor, getStatusLabel, cn } from '@/lib/utils';
+import { Booking, BookingStatus } from '@/types/database';
+import { Search, ChevronDown, Calendar, MapPin, Users, DollarSign } from 'lucide-react';
 
-import { formatCLP } from '@/lib/utils';
-import { BookingCard } from '@/components/bookings/booking-card';
-import { Search, Plus } from 'lucide-react';
-
-type BookingStatus = 'Visita Agendada' | 'Presupuesto Enviado' | 'Contrato Firmado' | 'Depósito Pagado' | 'Evento Cerrado' | 'Cancelada';
-
-const STATUS_OPTIONS: BookingStatus[] = [
-  'Visita Agendada',
-  'Presupuesto Enviado',
-  'Contrato Firmado',
-  'Depósito Pagado',
-  'Evento Cerrado',
-  'Cancelada',
+const BOOKING_STATUSES: BookingStatus[] = [
+  'VISIT_SCHEDULED',
+  'BUDGET_SENT',
+  'CONTRACT_SIGNED',
+  'DEPOSIT_PAID',
+  'EVENT_CLOSED',
+  'CANCELLED',
 ];
 
-const STATUS_COLORS: Record<BookingStatus, string> = {
-  'Visita Agendada': 'bg-blue-100 text-blue-800',
-  'Presupuesto Enviado': 'bg-purple-100 text-purple-800',
-  'Contrato Firmado': 'bg-indigo-100 text-indigo-800',
-  'Depósito Pagado': 'bg-green-100 text-green-800',
-  'Evento Cerrado': 'bg-emerald-100 text-emerald-800',
-  'Cancelada': 'bg-red-100 text-red-800',
-};
+// Skeleton component for loading state
+function BookingSkeleton() {
+  return (
+    <tr className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+      <td className="px-6 py-4">
+        <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 bg-gray-200 rounded w-24 animate-pulse"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 bg-gray-200 rounded w-28 animate-pulse"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 bg-gray-200 rounded w-32 animate-pulse"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-6 bg-gray-200 rounded-full w-24 animate-pulse"></div>
+      </td>
+      <td className="px-6 py-4">
+        <div className="h-4 bg-gray-200 rounded w-16 animate-pulse"></div>
+      </td>
+    </tr>
+  );
+}
+
+interface ExtendedBooking extends Booking {
+  couple?: {
+    partner_one_name: string;
+    partner_two_name: string;
+  };
+  venue?: {
+    name: string;
+  };
+}
 
 export default function BookingsPage() {
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [filteredBookings, setFilteredBookings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<ExtendedBooking[]>([]);
+  const [filteredBookings, setFilteredBookings] = useState<ExtendedBooking[]>([]);
   const [activeTab, setActiveTab] = useState<BookingStatus | 'Todas'>('Todas');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'status'>('date');
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -51,8 +74,8 @@ export default function BookingsPage() {
         .from('bookings')
         .select(`
           *,
-          venue:venue_id (name, location),
-          payments (id, amount, payment_date, method)
+          couple:couple_id (partner_one_name, partner_two_name),
+          venue:venue_id (name)
         `)
         .order('created_at', { ascending: false });
 
@@ -73,20 +96,23 @@ export default function BookingsPage() {
       filtered = filtered.filter((b) => b.status === activeTab);
     }
 
-    // Filter by search query
+    // Filter by search query (couple name)
     if (searchQuery) {
-      filtered = filtered.filter((b) =>
-        `${b.couple_name_1} ${b.couple_name_2}`.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+      filtered = filtered.filter((b) => {
+        const coupleName = b.couple
+          ? `${b.couple.partner_one_name} ${b.couple.partner_two_name}`.toLowerCase()
+          : '';
+        return coupleName.includes(searchQuery.toLowerCase());
+      });
     }
 
     // Sort
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'date':
-          return new Date(b.event_date).getTime() - new Date(a.event_date).getTime();
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
         case 'amount':
-          return b.total_amount - a.total_amount;
+          return b.total_price_clp - a.total_price_clp;
         case 'status':
           return a.status.localeCompare(b.status);
         default:
@@ -97,122 +123,241 @@ export default function BookingsPage() {
     setFilteredBookings(filtered);
   };
 
-  const getStatusCount = (status: BookingStatus) => {
+  const getStatusCount = (status: BookingStatus): number => {
     return bookings.filter((b) => b.status === status).length;
   };
 
-  const getTotalCount = () => bookings.length;
+  const getTotalCount = (): number => bookings.length;
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#1B4F72' }}></div>
-      </div>
-    );
-  }
+  const getCoupleName = (booking: ExtendedBooking): string => {
+    if (booking.couple) {
+      return `${booking.couple.partner_one_name} & ${booking.couple.partner_two_name}`;
+    }
+    return 'Sin pareja';
+  };
+
+  const getVenueName = (booking: ExtendedBooking): string => {
+    return booking.venue?.name || 'Sin especificar';
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: '#1B4F72' }}>
-            Reservas
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reservas</h1>
           <p className="text-gray-600">Gestiona el pipeline de reservas de tu venue</p>
         </div>
 
-        {/* Filters and Search */}
-        <div className="mb-6 space-y-4">
-          {/* Tab Filters */}
-          <div className="flex flex-wrap gap-2 pb-4 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('Todas')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors relative ${
+        {/* Filter Tabs */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          <button
+            onClick={() => setActiveTab('Todas')}
+            className={cn(
+              'px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2',
+              activeTab === 'Todas'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            )}
+          >
+            Todas
+            <span
+              className={cn(
+                'inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full',
                 activeTab === 'Todas'
-                  ? 'text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-              style={{
-                backgroundColor: activeTab === 'Todas' ? '#1B4F72' : 'transparent',
-              }}
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-300 text-gray-900'
+              )}
             >
-              Todas
-              <span className="ml-2 inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full bg-white" style={{ color: '#1B4F72' }}>
-                {getTotalCount()}
+              {getTotalCount()}
+            </span>
+          </button>
+
+          {BOOKING_STATUSES.map((status) => (
+            <button
+              key={status}
+              onClick={() => setActiveTab(status)}
+              className={cn(
+                'px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center gap-2',
+                activeTab === status
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              )}
+            >
+              {getStatusLabel(status)}
+              <span
+                className={cn(
+                  'inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full',
+                  activeTab === status
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-300 text-gray-900'
+                )}
+              >
+                {getStatusCount(status)}
               </span>
             </button>
+          ))}
+        </div>
 
-            {STATUS_OPTIONS.map((status) => (
-              <button
-                key={status}
-                onClick={() => setActiveTab(status)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors relative ${
-                  activeTab === status
-                    ? 'text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-                style={{
-                  backgroundColor: activeTab === status ? '#2E75B6' : 'transparent',
-                }}
-              >
-                {status}
-                <span className="ml-2 inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded-full bg-white" style={{ color: '#2E75B6' }}>
-                  {getStatusCount(status)}
-                </span>
-              </button>
-            ))}
+        {/* Search and Sort Controls */}
+        <div className="mb-6 flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre de pareja..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
 
-          {/* Search and Sort */}
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Buscar por nombre de pareja..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
-              />
-            </div>
-
+          <div className="relative">
             <select
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2"
-              style={{ focusRing: '2px solid #3498DB' }}
+              onChange={(e) => setSortBy(e.target.value as 'date' | 'amount' | 'status')}
+              className="pl-4 pr-10 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer"
             >
               <option value="date">Ordenar por fecha</option>
               <option value="amount">Ordenar por monto</option>
               <option value="status">Ordenar por estado</option>
             </select>
+            <ChevronDown
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+              size={18}
+            />
           </div>
         </div>
 
-        {/* Bookings List */}
-        {filteredBookings.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">📋</div>
-            <p className="text-xl font-semibold text-gray-700 mb-2">Sin reservas</p>
-            <p className="text-gray-500">No hay reservas que coincidan con tu búsqueda</p>
+        {/* Empty State */}
+        {!loading && filteredBookings.length === 0 && (
+          <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+            <Calendar className="mx-auto mb-4 text-gray-300" size={48} />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Sin reservas</h3>
+            <p className="text-gray-600">
+              {searchQuery || activeTab !== 'Todas'
+                ? 'No hay reservas que coincidan con tu búsqueda'
+                : 'No hay reservas registradas aún'}
+            </p>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {filteredBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="cursor-pointer transition-all"
-                onClick={() => setExpandedId(expandedId === booking.id ? null : booking.id)}
-              >
-                <BookingCard
-                  booking={booking}
-                  isExpanded={expandedId === booking.id}
-                  onStatusChange={fetchBookings}
-                />
-              </div>
-            ))}
+        )}
+
+        {/* Bookings Table */}
+        {!loading && filteredBookings.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Pareja
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Fecha
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Espacio
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Monto
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredBookings.map((booking) => {
+                  const statusColor = getStatusColor(booking.status);
+                  return (
+                    <tr
+                      key={booking.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {getCoupleName(booking)}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                          <Users size={12} />
+                          {booking.guest_count} invitados
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {formatDate(booking.date)}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        <div className="flex items-center gap-1">
+                          <MapPin size={14} className="text-gray-400" />
+                          {getVenueName(booking)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900 flex items-center gap-1">
+                          <DollarSign size={14} className="text-gray-400" />
+                          {formatCLP(booking.total_price_clp)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span
+                          className={cn(
+                            'inline-block px-3 py-1 rounded-full text-sm font-medium',
+                            statusColor.bg,
+                            statusColor.text
+                          )}
+                        >
+                          {getStatusLabel(booking.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          className="text-blue-600 hover:text-blue-900 font-medium text-sm transition-colors"
+                        >
+                          Ver detalles
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Loading Skeleton */}
+        {loading && (
+          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Pareja
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Fecha
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Espacio
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Monto
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Estado
+                  </th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {[...Array(5)].map((_, i) => (
+                  <BookingSkeleton key={i} />
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

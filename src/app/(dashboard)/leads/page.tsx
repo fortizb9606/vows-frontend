@@ -2,23 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-
-import { formatCLP } from '@/lib/utils';
 import { LeadCard } from '@/components/leads/lead-card';
 import { LeadFormModal } from '@/components/leads/lead-form-modal';
-import { Plus, Filter } from 'lucide-react';
+import { Plus, ChevronDown } from 'lucide-react';
 
-type LeadStatus = 'NUEVO' | 'CALIFICADO' | 'EN CONTACTO' | 'VISITA AGENDADA' | 'CONVERTIDO' | 'PERDIDO';
+type LeadStatus = 'NUEVO' | 'CALIFICADO' | 'EN CONTACTO/NURTURING' | 'VISITA AGENDADA' | 'CONVERTIDO' | 'PERDIDO';
 
-const KANBAN_COLUMNS: LeadStatus[] = ['NUEVO', 'CALIFICADO', 'EN CONTACTO', 'VISITA AGENDADA', 'CONVERTIDO', 'PERDIDO'];
+const KANBAN_COLUMNS: LeadStatus[] = [
+  'NUEVO',
+  'CALIFICADO',
+  'EN CONTACTO/NURTURING',
+  'VISITA AGENDADA',
+  'CONVERTIDO',
+  'PERDIDO',
+];
 
-const COLUMN_COLORS: Record<LeadStatus, string> = {
-  'NUEVO': '#3498DB',
-  'CALIFICADO': '#9B59B6',
-  'EN CONTACTO': '#F39C12',
-  'VISITA AGENDADA': '#16A085',
-  'CONVERTIDO': '#27AE60',
-  'PERDIDO': '#E74C3C',
+const COLUMN_CONFIG: Record<LeadStatus, { color: string; bgColor: string }> = {
+  'NUEVO': { color: '#06B6D4', bgColor: 'from-cyan-50' },
+  'CALIFICADO': { color: '#10B981', bgColor: 'from-green-50' },
+  'EN CONTACTO/NURTURING': { color: '#EAB308', bgColor: 'from-yellow-50' },
+  'VISITA AGENDADA': { color: '#3B82F6', bgColor: 'from-blue-50' },
+  'CONVERTIDO': { color: '#10B981', bgColor: 'from-emerald-50' },
+  'PERDIDO': { color: '#EF4444', bgColor: 'from-red-50' },
 };
 
 export default function LeadsPage() {
@@ -42,11 +47,13 @@ export default function LeadsPage() {
       // Fetch leads
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
-        .select(`
+        .select(
+          `
           *,
           venue:venue_id (id, name),
           agent:assigned_agent_id (id, name)
-        `)
+        `
+        )
         .order('created_at', { ascending: false });
 
       if (leadsError) throw leadsError;
@@ -110,101 +117,131 @@ export default function LeadsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: '#1B4F72' }}></div>
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Cargando leads...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="p-6 md:p-8">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2" style={{ color: '#1B4F72' }}>
-            Leads
-          </h1>
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Leads / CRM</h1>
           <p className="text-gray-600">Gestiona tu pipeline de leads con el tablero Kanban</p>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <select
-            value={selectedVenue}
-            onChange={(e) => setSelectedVenue(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2"
-            style={{ focusRing: '2px solid #3498DB' }}
-          >
-            <option value="">Todos los venues</option>
-            {venues.map((venue) => (
-              <option key={venue.id} value={venue.id}>
-                {venue.name}
-              </option>
-            ))}
-          </select>
+        {/* Controls */}
+        <div className="flex flex-col md:flex-row gap-4 mb-8">
+          {/* Venue Filter */}
+          <div className="relative flex-1 md:flex-none">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Filtrar por Venue</label>
+            <div className="relative">
+              <select
+                value={selectedVenue}
+                onChange={(e) => setSelectedVenue(e.target.value)}
+                className="w-full md:w-48 appearance-none px-4 py-2.5 rounded-xl border border-gray-100 bg-white text-gray-900 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
+              >
+                <option value="">Todos los venues</option>
+                {venues.map((venue) => (
+                  <option key={venue.id} value={venue.id}>
+                    {venue.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+            </div>
+          </div>
 
-          <select
-            value={selectedAgent}
-            onChange={(e) => setSelectedAgent(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2"
-            style={{ focusRing: '2px solid #3498DB' }}
-          >
-            <option value="">Todos los agentes</option>
-            {agents.map((agent) => (
-              <option key={agent.id} value={agent.id}>
-                {agent.name}
-              </option>
-            ))}
-          </select>
+          {/* Agent Filter */}
+          <div className="relative flex-1 md:flex-none">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Filtrar por Agente</label>
+            <div className="relative">
+              <select
+                value={selectedAgent}
+                onChange={(e) => setSelectedAgent(e.target.value)}
+                className="w-full md:w-48 appearance-none px-4 py-2.5 rounded-xl border border-gray-100 bg-white text-gray-900 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
+              >
+                <option value="">Todos los agentes</option>
+                {agents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+            </div>
+          </div>
 
-          <button
-            onClick={handleAddLead}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white transition-colors"
-            style={{ backgroundColor: '#1B4F72' }}
-          >
-            <Plus size={20} />
-            Nuevo Lead
-          </button>
+          {/* New Lead Button */}
+          <div className="flex items-end">
+            <button
+              onClick={handleAddLead}
+              className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md transition-all duration-200"
+            >
+              <Plus size={20} />
+              Nuevo Lead
+            </button>
+          </div>
         </div>
 
         {/* Kanban Board */}
-        <div className="overflow-x-auto">
-          <div className="flex gap-6 min-w-max pb-6">
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-6 min-w-max">
             {KANBAN_COLUMNS.map((status) => {
               const columnLeads = getFilteredLeads(status);
-              const columnColor = COLUMN_COLORS[status];
+              const config = COLUMN_CONFIG[status];
 
               return (
                 <div
                   key={status}
-                  className="flex flex-col bg-gray-100 rounded-lg p-4 w-96 flex-shrink-0"
+                  className="flex flex-col flex-shrink-0 w-96 rounded-2xl bg-white shadow-sm border border-gray-100 overflow-hidden"
                 >
                   {/* Column Header */}
-                  <div className="mb-4 pb-3 border-b-2" style={{ borderColor: columnColor }}>
-                    <div className="flex items-center gap-2 mb-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: columnColor }}
-                      />
-                      <h3 className="font-bold text-gray-900">{status}</h3>
+                  <div
+                    className="px-6 py-4 border-b border-gray-100"
+                    style={{
+                      borderTopWidth: '4px',
+                      borderTopColor: config.color,
+                      backgroundColor: `${config.color}08`,
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-3 h-3 rounded-full shadow-sm"
+                          style={{ backgroundColor: config.color }}
+                        />
+                        <h3 className="font-bold text-gray-900">{status}</h3>
+                      </div>
+                      <span
+                        className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold text-white"
+                        style={{ backgroundColor: config.color }}
+                      >
+                        {columnLeads.length}
+                      </span>
                     </div>
-                    <p className="text-xs font-semibold text-gray-500">
-                      {columnLeads.length} {columnLeads.length === 1 ? 'lead' : 'leads'}
-                    </p>
                   </div>
 
                   {/* Cards Container */}
-                  <div className="flex-1 space-y-3 overflow-y-auto max-h-[calc(100vh-300px)]">
+                  <div className="flex-1 overflow-y-auto max-h-[calc(100vh-280px)] px-4 py-4 space-y-3">
                     {columnLeads.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400">
-                        <p className="text-sm">Sin leads</p>
+                      <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                          <span className="text-xl">📭</span>
+                        </div>
+                        <p className="text-sm font-medium">Sin leads</p>
                       </div>
                     ) : (
                       columnLeads.map((lead) => (
                         <div
                           key={lead.id}
                           onClick={() => handleLeadClick(lead)}
-                          className="cursor-pointer"
+                          className="cursor-pointer transform transition-all duration-200 hover:scale-105"
                         >
                           <LeadCard lead={lead} />
                         </div>

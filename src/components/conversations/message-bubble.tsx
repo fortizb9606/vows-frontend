@@ -1,7 +1,10 @@
+'use client';
+
 import type { Database } from '@/types/database';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Bot } from 'lucide-react';
+import { Bot, CheckCheck, Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type Message = Database['public']['Tables']['messages']['Row'];
 
@@ -13,46 +16,49 @@ interface MessageBubbleProps {
 export function MessageBubble({ message, isAgent }: MessageBubbleProps) {
   const isBot = message.sender_type === 'AI_BOT';
 
-  const getBgColor = () => {
-    if (isAgent) {
-      return 'bg-blue-500 text-white';
-    } else if (isBot) {
-      return 'bg-purple-100 text-gray-900';
-    } else {
-      return 'bg-gray-200 text-gray-900';
-    }
-  };
-
-  const getAlignment = () => {
-    if (isAgent) {
-      return 'ml-auto';
-    } else {
-      return 'mr-auto';
-    }
-  };
-
   const formatTime = (date: string) => {
     return format(new Date(date), 'HH:mm', { locale: es });
   };
 
   return (
-    <div className={`flex ${isAgent ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`max-w-xs lg:max-w-md ${getAlignment()}`}>
-        <div className={`flex ${isAgent ? 'flex-row-reverse' : 'flex-row'} items-end gap-2`}>
-          {isBot && (
-            <div className="flex-shrink-0">
-              <div className="w-8 h-8 rounded-full bg-purple-200 flex items-center justify-center">
-                <Bot size={16} className="text-purple-700" />
+    <div className={cn('flex mb-3', isAgent ? 'justify-end' : 'justify-start')}>
+      <div className={cn('flex items-end gap-2.5 max-w-xs lg:max-w-lg', isAgent ? 'flex-row-reverse' : 'flex-row')}>
+        {/* Avatar for lead/bot messages */}
+        {!isAgent && (
+          <div className="flex-shrink-0">
+            {isBot ? (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center shadow-sm">
+                <Bot size={16} className="text-white" />
               </div>
-            </div>
-          )}
-          <div>
-            <div className={`rounded-lg px-4 py-2 ${getBgColor()}`}>
-              <p className="text-sm">{message.content}</p>
-            </div>
-            <p className={`text-xs text-gray-500 mt-1 ${isAgent ? 'text-right' : 'text-left'}`}>
-              {formatTime(message.created_at)}
-            </p>
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center shadow-sm">
+                <span className="text-xs font-semibold text-white">L</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Message Bubble */}
+        <div className="flex flex-col gap-1">
+          <div
+            className={cn(
+              'rounded-xl px-4 py-3 shadow-sm transition-all',
+              isAgent
+                ? 'bg-blue-600 text-white rounded-br-none'
+                : isBot
+                  ? 'bg-purple-100 text-gray-900 rounded-bl-none border border-purple-200'
+                  : 'bg-gray-200 text-gray-900 rounded-bl-none'
+            )}
+          >
+            <p className="text-sm leading-relaxed break-words">{message.content}</p>
+          </div>
+
+          {/* Time and Status */}
+          <div className={cn('flex items-center gap-1.5 px-2', isAgent ? 'justify-end' : 'justify-start')}>
+            <p className="text-xs text-gray-500">{formatTime(message.created_at)}</p>
+            {isAgent && (
+              <CheckCheck size={14} className="text-blue-600" />
+            )}
           </div>
         </div>
       </div>

@@ -1,16 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Database } from '@/types/database';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MessageBubble } from '@/components/conversations/message-bubble';
-import { MessageCircle, Mail, Send } from 'lucide-react';
+import { MessageCircle, Mail, Send, Menu, X, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 type Conversation = Database['public']['Tables']['conversations']['Row'] & {
   leads?: Database['public']['Tables']['leads']['Row'];
@@ -26,6 +26,13 @@ export default function ConversationsPage() {
   const [messageInput, setMessageInput] = useState('');
   const [channelFilter, setChannelFilter] = useState<string>('all');
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   useEffect(() => {
     fetchConversations();
@@ -116,13 +123,13 @@ export default function ConversationsPage() {
   const getChannelIcon = (channel: string) => {
     switch (channel) {
       case 'WHATSAPP':
-        return <MessageCircle size={16} className="text-green-600" />;
+        return <MessageCircle size={16} className="text-green-500" />;
       case 'WEB_CHAT':
-        return <MessageCircle size={16} className="text-blue-600" />;
+        return <MessageCircle size={16} className="text-blue-500" />;
       case 'EMAIL':
-        return <Mail size={16} className="text-purple-600" />;
+        return <Mail size={16} className="text-purple-500" />;
       default:
-        return <MessageCircle size={16} className="text-gray-600" />;
+        return <MessageCircle size={16} className="text-gray-500" />;
     }
   };
 
@@ -139,179 +146,284 @@ export default function ConversationsPage() {
     }
   };
 
+  const getChannelColor = (channel: string) => {
+    switch (channel) {
+      case 'WHATSAPP':
+        return 'bg-green-50 border-green-200';
+      case 'WEB_CHAT':
+        return 'bg-blue-50 border-blue-200';
+      case 'EMAIL':
+        return 'bg-purple-50 border-purple-200';
+      default:
+        return 'bg-gray-50 border-gray-200';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="h-screen flex flex-col">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 p-6">
-          <h1 className="text-3xl font-bold" style={{ color: '#1B4F72' }}>
-            Conversaciones
-          </h1>
-          <p className="text-gray-600 mt-2">Gestiona las conversaciones con los clientes</p>
+    <div className="h-[calc(100vh-140px)] flex bg-gray-50">
+      {/* Left Panel - Conversation List */}
+      <div
+        className={cn(
+          'flex flex-col bg-white border-r border-gray-200 transition-all duration-300',
+          'md:w-80 md:relative absolute inset-y-0 left-0 z-40',
+          sidebarOpen ? 'w-80' : 'w-0 -translate-x-full md:translate-x-0'
+        )}
+      >
+        {/* Close button on mobile */}
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="md:hidden absolute top-4 right-4 z-50 p-2 hover:bg-gray-100 rounded-lg"
+        >
+          <X size={20} />
+        </button>
+
+        {/* Channel Filter */}
+        <div className="p-4 border-b border-gray-200">
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            <Button
+              onClick={() => setChannelFilter('all')}
+              variant={channelFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              className={cn(
+                'whitespace-nowrap rounded-lg font-medium transition-all',
+                channelFilter === 'all'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
+              )}
+            >
+              Todas
+            </Button>
+            <Button
+              onClick={() => setChannelFilter('WHATSAPP')}
+              variant={channelFilter === 'WHATSAPP' ? 'default' : 'outline'}
+              size="sm"
+              className={cn(
+                'whitespace-nowrap rounded-lg font-medium transition-all flex items-center gap-2',
+                channelFilter === 'WHATSAPP'
+                  ? 'bg-green-600 hover:bg-green-700 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
+              )}
+            >
+              <MessageCircle size={14} />
+              WhatsApp
+            </Button>
+            <Button
+              onClick={() => setChannelFilter('WEB_CHAT')}
+              variant={channelFilter === 'WEB_CHAT' ? 'default' : 'outline'}
+              size="sm"
+              className={cn(
+                'whitespace-nowrap rounded-lg font-medium transition-all flex items-center gap-2',
+                channelFilter === 'WEB_CHAT'
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
+              )}
+            >
+              <MessageCircle size={14} />
+              Web Chat
+            </Button>
+            <Button
+              onClick={() => setChannelFilter('EMAIL')}
+              variant={channelFilter === 'EMAIL' ? 'default' : 'outline'}
+              size="sm"
+              className={cn(
+                'whitespace-nowrap rounded-lg font-medium transition-all flex items-center gap-2',
+                channelFilter === 'EMAIL'
+                  ? 'bg-purple-600 hover:bg-purple-700 text-white shadow-sm'
+                  : 'text-gray-700 hover:bg-gray-100'
+              )}
+            >
+              <Mail size={14} />
+              Email
+            </Button>
+          </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Conversation List */}
-          <div className="w-full md:w-96 border-r border-gray-200 bg-white flex flex-col">
-            {/* Channel Filter */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex gap-2 overflow-x-auto">
-                <Button
-                  onClick={() => setChannelFilter('all')}
-                  variant={channelFilter === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  style={channelFilter === 'all' ? { backgroundColor: '#1B4F72' } : {}}
-                  className="whitespace-nowrap"
-                >
-                  Todas
-                </Button>
-                <Button
-                  onClick={() => setChannelFilter('WHATSAPP')}
-                  variant={channelFilter === 'WHATSAPP' ? 'default' : 'outline'}
-                  size="sm"
-                  style={channelFilter === 'WHATSAPP' ? { backgroundColor: '#1B4F72' } : {}}
-                  className="whitespace-nowrap"
-                >
-                  WhatsApp
-                </Button>
-                <Button
-                  onClick={() => setChannelFilter('WEB_CHAT')}
-                  variant={channelFilter === 'WEB_CHAT' ? 'default' : 'outline'}
-                  size="sm"
-                  style={channelFilter === 'WEB_CHAT' ? { backgroundColor: '#1B4F72' } : {}}
-                  className="whitespace-nowrap"
-                >
-                  Web Chat
-                </Button>
-                <Button
-                  onClick={() => setChannelFilter('EMAIL')}
-                  variant={channelFilter === 'EMAIL' ? 'default' : 'outline'}
-                  size="sm"
-                  style={channelFilter === 'EMAIL' ? { backgroundColor: '#1B4F72' } : {}}
-                  className="whitespace-nowrap"
-                >
-                  Email
-                </Button>
-              </div>
+        {/* Conversations List */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="p-6 text-center">
+              <Loader2 className="animate-spin mx-auto text-gray-400 mb-2" size={24} />
+              <p className="text-sm text-gray-600">Cargando conversaciones...</p>
             </div>
-
-            {/* Conversations List */}
-            <div className="flex-1 overflow-y-auto">
-              {loading ? (
-                <div className="p-4 text-center text-gray-600">Cargando conversaciones...</div>
-              ) : conversations.length === 0 ? (
-                <div className="p-4 text-center text-gray-600">No hay conversaciones</div>
-              ) : (
-                conversations.map((conversation) => (
-                  <button
-                    key={conversation.id}
-                    onClick={() => setSelectedConversation(conversation)}
-                    className={`w-full p-4 border-b border-gray-100 text-left hover:bg-gray-50 transition ${
-                      selectedConversation?.id === conversation.id ? 'bg-blue-50' : ''
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
+          ) : conversations.length === 0 ? (
+            <div className="p-6 text-center">
+              <MessageCircle className="mx-auto text-gray-300 mb-2" size={32} />
+              <p className="text-sm text-gray-600">No hay conversaciones</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {conversations.map((conversation) => (
+                <button
+                  key={conversation.id}
+                  onClick={() => {
+                    setSelectedConversation(conversation);
+                    setSidebarOpen(false);
+                  }}
+                  className={cn(
+                    'w-full p-4 text-left transition-all hover:bg-gray-50',
+                    selectedConversation?.id === conversation.id
+                      ? 'bg-blue-50 border-l-4 border-blue-600'
+                      : 'border-l-4 border-transparent'
+                  )}
+                >
+                  <div className="flex items-start gap-3 mb-2">
+                    {/* Avatar */}
+                    <div className="flex-shrink-0">
+                      <div className={cn(
+                        'w-12 h-12 rounded-full flex items-center justify-center shadow-sm',
+                        getChannelColor(conversation.channel)
+                      )}>
                         {getChannelIcon(conversation.channel)}
-                        <h3 className="font-semibold text-gray-900">
+                      </div>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="font-semibold text-gray-900 truncate text-sm">
                           {conversation.leads?.name || 'Cliente Desconocido'}
                         </h3>
+                        {conversation.has_unread && (
+                          <Badge className="bg-blue-600 text-white text-xs ml-auto flex-shrink-0">
+                            Nuevo
+                          </Badge>
+                        )}
                       </div>
-                      {conversation.has_unread && (
-                        <Badge
-                          style={{ backgroundColor: '#3498DB' }}
-                          className="text-white"
-                        >
-                          Nuevo
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-1">
-                      {conversation.last_message_preview || 'Sin mensajes'}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatDistanceToNow(new Date(conversation.updated_at), {
-                        addSuffix: true,
-                        locale: es,
-                      })}
-                    </p>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Right Panel - Messages */}
-          <div className="hidden md:flex flex-1 flex-col bg-gray-50">
-            {selectedConversation ? (
-              <>
-                {/* Messages Header */}
-                <div className="bg-white border-b border-gray-200 p-6">
-                  <div className="flex items-center gap-3">
-                    {getChannelIcon(selectedConversation.channel)}
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">
-                        {selectedConversation.leads?.name || 'Cliente'}
-                      </h2>
-                      <p className="text-sm text-gray-600">
-                        {getChannelLabel(selectedConversation.channel)}
-                        {selectedConversation.leads?.email && ` • ${selectedConversation.leads.email}`}
+                      <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                        {conversation.leads?.email || conversation.leads?.phone || 'Sin contacto'}
                       </p>
                     </div>
                   </div>
-                </div>
 
-                {/* Messages Container */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {messages.length === 0 ? (
-                    <div className="h-full flex items-center justify-center text-gray-600">
-                      <p>Sin mensajes aún</p>
-                    </div>
-                  ) : (
-                    messages.map((message) => (
-                      <MessageBubble
-                        key={message.id}
-                        message={message}
-                        isAgent={message.sender_type === 'AGENT'}
-                      />
-                    ))
-                  )}
-                </div>
+                  {/* Last Message */}
+                  <p className="text-sm text-gray-600 line-clamp-2 mb-1 pl-15">
+                    {conversation.last_message_preview || 'Sin mensajes'}
+                  </p>
 
-                {/* Message Input */}
-                <form
-                  onSubmit={handleSendMessage}
-                  className="bg-white border-t border-gray-200 p-6"
-                >
-                  <div className="flex gap-3">
-                    <Input
-                      type="text"
-                      value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      placeholder="Escribe un mensaje..."
-                      disabled={sendingMessage}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="submit"
-                      disabled={sendingMessage || !messageInput.trim()}
-                      style={{ backgroundColor: '#2E75B6' }}
-                      className="px-6 flex items-center gap-2"
-                    >
-                      <Send size={16} />
-                      Enviar
-                    </Button>
-                  </div>
-                </form>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-600">
-                <p>Selecciona una conversación para ver los mensajes</p>
-              </div>
-            )}
-          </div>
+                  {/* Time */}
+                  <p className="text-xs text-gray-500 pl-15">
+                    {formatDistanceToNow(new Date(conversation.updated_at), {
+                      addSuffix: true,
+                      locale: es,
+                    })}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Right Panel - Messages */}
+      <div className="hidden md:flex flex-1 flex-col">
+        {selectedConversation ? (
+          <>
+            {/* Chat Header */}
+            <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  {/* Mobile menu toggle */}
+                  <button
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                    className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
+                  >
+                    <Menu size={20} />
+                  </button>
+
+                  {/* Avatar */}
+                  <div className={cn(
+                    'w-12 h-12 rounded-full flex items-center justify-center shadow-sm',
+                    getChannelColor(selectedConversation.channel)
+                  )}>
+                    {getChannelIcon(selectedConversation.channel)}
+                  </div>
+
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      {selectedConversation.leads?.name || 'Cliente'}
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      <span className="inline-flex items-center gap-1">
+                        {getChannelLabel(selectedConversation.channel)}
+                      </span>
+                      {selectedConversation.leads?.email && (
+                        <span className="text-gray-400"> • {selectedConversation.leads.email}</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Messages Container */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-gray-50 to-white">
+              {messages.length === 0 ? (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <MessageCircle className="mx-auto text-gray-300 mb-3" size={40} />
+                    <p className="text-gray-600">Inicia una conversación</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {messages.map((message) => (
+                    <MessageBubble
+                      key={message.id}
+                      message={message}
+                      isAgent={message.sender_type === 'AGENT'}
+                    />
+                  ))}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+            </div>
+
+            {/* Message Input */}
+            <form
+              onSubmit={handleSendMessage}
+              className="bg-white border-t border-gray-200 p-4 shadow-lg"
+            >
+              <div className="flex gap-3 items-end">
+                <Input
+                  type="text"
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  placeholder="Escribe tu mensaje aquí..."
+                  disabled={sendingMessage}
+                  className="flex-1 rounded-xl border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <Button
+                  type="submit"
+                  disabled={sendingMessage || !messageInput.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 h-10 flex items-center gap-2 transition-all shadow-sm"
+                >
+                  {sendingMessage ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Send size={16} />
+                  )}
+                  <span className="hidden sm:inline">Enviar</span>
+                </Button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <MessageCircle className="mx-auto text-gray-300 mb-3" size={48} />
+              <p className="text-gray-600 text-lg">Selecciona una conversación para empezar</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile overlay when sidebar is open */}
+      {sidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/50 z-30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
     </div>
   );
 }

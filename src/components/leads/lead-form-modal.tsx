@@ -64,7 +64,9 @@ export function LeadFormModal({
     }
   }, [lead]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -148,16 +150,16 @@ export function LeadFormModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-          <h2 className="text-xl font-bold" style={{ color: '#1B4F72' }}>
+        <div className="sticky top-0 bg-white border-b border-gray-100 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">
             {lead ? 'Editar Lead' : 'Nuevo Lead'}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100 p-1"
           >
             <X size={24} />
           </button>
@@ -167,7 +169,7 @@ export function LeadFormModal({
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Error Message */}
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
               <p className="text-sm font-medium text-red-800">{error}</p>
             </div>
           )}
@@ -176,7 +178,7 @@ export function LeadFormModal({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Nombre *
+                Nombre <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -184,14 +186,13 @@ export function LeadFormModal({
                 value={formData.name}
                 onChange={handleChange}
                 placeholder="Juan Pérez"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email *
+                Email <span className="text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -199,14 +200,13 @@ export function LeadFormModal({
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="juan@example.com"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Teléfono *
+                Teléfono <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
@@ -214,8 +214,7 @@ export function LeadFormModal({
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="+56 9 1234 5678"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
           </div>
@@ -230,8 +229,7 @@ export function LeadFormModal({
                 name="source"
                 value={formData.source}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               >
                 {SOURCE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -252,8 +250,7 @@ export function LeadFormModal({
                 onChange={handleChange}
                 placeholder="100"
                 min="0"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
           </div>
@@ -271,8 +268,7 @@ export function LeadFormModal({
                 onChange={handleChange}
                 placeholder="1000000"
                 min="0"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
 
@@ -287,8 +283,7 @@ export function LeadFormModal({
                 onChange={handleChange}
                 placeholder="5000000"
                 min="0"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
           </div>
@@ -304,8 +299,7 @@ export function LeadFormModal({
                 name="event_date_range_start"
                 value={formData.event_date_range_start}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
 
@@ -318,8 +312,7 @@ export function LeadFormModal({
                 name="event_date_range_end"
                 value={formData.event_date_range_end}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               />
             </div>
           </div>
@@ -334,8 +327,7 @@ export function LeadFormModal({
                 name="venue_id"
                 value={formData.venue_id}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               >
                 <option value="">Sin venue</option>
                 {venues.map((venue) => (
@@ -354,8 +346,7 @@ export function LeadFormModal({
                 name="assigned_agent_id"
                 value={formData.assigned_agent_id}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
-                style={{ focusRing: '2px solid #3498DB' }}
+                className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
               >
                 <option value="">Sin asignar</option>
                 {agents.map((agent) => (
@@ -378,25 +369,23 @@ export function LeadFormModal({
               onChange={handleChange}
               placeholder="Notas adicionales sobre el lead..."
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 resize-none"
-              style={{ focusRing: '2px solid #3498DB' }}
+              className="w-full px-4 py-2.5 border border-gray-100 rounded-xl bg-white text-gray-900 placeholder-gray-400 shadow-sm focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all resize-none"
             />
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-4 pt-4 border-t border-gray-200">
+          <div className="flex gap-3 pt-4 border-t border-gray-100">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-gray-700 bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 rounded-lg font-semibold text-white transition-colors flex items-center justify-center gap-2"
-              style={{ backgroundColor: '#1B4F72' }}
+              className="flex-1 px-4 py-2.5 rounded-xl font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-70"
             >
               {loading && <Loader size={18} className="animate-spin" />}
               {lead ? 'Guardar Cambios' : 'Crear Lead'}
