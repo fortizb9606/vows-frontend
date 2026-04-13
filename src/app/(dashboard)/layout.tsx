@@ -54,45 +54,45 @@ const navigationGroups: NavigationGroup[] = [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       {
         label: "Espacios",
-        href: "/dashboard/venues",
+        href: "/venues",
         icon: Building2,
         hideWhen: (type) => type !== "venue",
       },
-      { label: "Calendario", href: "/dashboard/calendar", icon: Calendar },
+      { label: "Calendario", href: "/calendar", icon: Calendar },
     ],
   },
   {
     title: "VENTAS",
     items: [
-      { label: "Reservas", href: "/dashboard/bookings", icon: BookOpen },
-      { label: "Leads / CRM", href: "/dashboard/leads", icon: Users },
+      { label: "Reservas", href: "/bookings", icon: BookOpen },
+      { label: "Leads / CRM", href: "/leads", icon: Users },
       {
         label: "Mensajes",
-        href: "/dashboard/conversations",
+        href: "/conversations",
         icon: MessageSquare,
       },
-      { label: "Cotizaciones", href: "/dashboard/quotes", icon: FileText },
+      { label: "Cotizaciones", href: "/quotes", icon: FileText },
     ],
   },
   {
     title: "FINANZAS",
     items: [
-      { label: "Precios", href: "/dashboard/pricing", icon: DollarSign },
-      { label: "Paquetes", href: "/dashboard/packages", icon: Package },
-      { label: "Pagos", href: "/dashboard/payments", icon: CreditCard },
+      { label: "Precios", href: "/pricing", icon: DollarSign },
+      { label: "Paquetes", href: "/packages", icon: Package },
+      { label: "Pagos", href: "/payments", icon: CreditCard },
     ],
   },
   {
     title: "CRECIMIENTO",
     items: [
-      { label: "Reseñas", href: "/dashboard/reviews", icon: Star },
-      { label: "Analíticas", href: "/dashboard/analytics", icon: BarChart3 },
+      { label: "Reseñas", href: "/reviews", icon: Star },
+      { label: "Analíticas", href: "/analytics", icon: BarChart3 },
       {
         label: "Perfil Público",
-        href: "/dashboard/public-profile",
+        href: "/public-profile",
         icon: Globe,
       },
-      { label: "Configuración", href: "/dashboard/settings", icon: Settings },
+      { label: "Configuración", href: "/settings", icon: Settings },
     ],
   },
 ];
